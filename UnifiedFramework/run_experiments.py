@@ -75,12 +75,11 @@ class ExperimentPipeline:
             augment=True
         )
         
-        # Load base dataset for poisoning
-        train_transform, test_transform = get_data_transforms(self.args.dataset, augment=False)
+        # Load base dataset WITHOUT transforms for poisoning
         base_train_dataset = get_dataset(self.args.dataset, self.args.data_path, 
-                                        train=True, transform=train_transform)
+                                        train=True, transform=None)
         base_test_dataset = get_dataset(self.args.dataset, self.args.data_path,
-                                       train=False, transform=test_transform)
+                                       train=False, transform=None)
         
         # Create model
         print("Creating model...")
@@ -107,7 +106,7 @@ class ExperimentPipeline:
         print("\nEvaluating poisoned model (baseline)...")
         metrics = BackdoorMetrics()
         
-        # Test on clean data
+        # Test on clean data - with transforms
         _, test_transform = get_data_transforms(self.args.dataset, augment=False)
         clean_test_dataset = get_dataset(self.args.dataset, self.args.data_path,
                                         train=False, transform=test_transform)

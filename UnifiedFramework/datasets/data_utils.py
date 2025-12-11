@@ -225,6 +225,15 @@ class PoisonedDataset(Dataset):
         return img, label
 
 
+
+
+def _collate_fn_poisoned(batch, transform):
+    """Collate function for poisoned dataset - module level for pickling"""
+    images, labels = zip(*batch)
+    return torch.stack([t if isinstance(t, torch.Tensor) else transform(t) 
+                      for t in images]), torch.tensor(labels)
+
+
 def create_poisoned_loader(dataset_name: str, root: str, poisoned_dataset,
                           batch_size: int = 128, num_workers: int = 4,
                           augment: bool = True):
@@ -244,13 +253,18 @@ def create_poisoned_loader(dataset_name: str, root: str, poisoned_dataset,
     """
     _, transform = get_data_transforms(dataset_name, augment)
     
-    def collate_fn(batch):
-        images, labels = zip(*batch)
-        return torch.stack([t if isinstance(t, torch.Tensor) else transform(t) 
-                          for t in images]), torch.tensor(labels)
+    # Use 0 workers on Windows with CPU to avoid pickling issues
+    import sys
+    if sys.platform == 'win32':
+        num_workers = 0
+    
+    # Create a partial function at module level
+    from functools import partial
+    collate = partial(_collate_fn_poisoned, transform=transform)
     
     loader = DataLoader(poisoned_dataset, batch_size=batch_size,
                        shuffle=True, num_workers=num_workers,
-                       collate_fn=collate_fn)
+                       collate_fn=collate)
     
     return loader
+

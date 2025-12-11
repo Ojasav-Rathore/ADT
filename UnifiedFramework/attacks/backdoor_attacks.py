@@ -21,7 +21,14 @@ class BadNetAttack:
     
     def apply_trigger(self, image: np.ndarray) -> np.ndarray:
         """Apply BadNet trigger to image"""
-        img = image.copy()
+        # Handle both PIL Image and numpy array
+        if isinstance(image, Image.Image):
+            img = np.array(image).astype(np.uint8)
+        elif isinstance(image, torch.Tensor):
+            img = image.numpy().copy().astype(np.uint8)
+        else:
+            img = np.array(image).astype(np.uint8)
+        
         # Place square in bottom-right corner
         x_offset = img.shape[1] - self.trigger_width
         y_offset = img.shape[0] - self.trigger_height
@@ -55,7 +62,13 @@ class BlendAttack:
     
     def apply_trigger(self, image: np.ndarray) -> np.ndarray:
         """Apply Blend attack trigger to image"""
-        img = image.copy().astype(np.float32)
+        # Handle both PIL Image and numpy array
+        if isinstance(image, Image.Image):
+            img = np.array(image).astype(np.uint8)
+        elif isinstance(image, torch.Tensor):
+            img = image.numpy().copy().astype(np.uint8)
+        else:
+            img = np.array(image).astype(np.uint8)
         
         if self.trigger_pattern is None:
             trigger = self._create_default_trigger(img.shape)
@@ -95,7 +108,14 @@ class SignalAttack:
     
     def apply_trigger(self, image: np.ndarray) -> np.ndarray:
         """Apply SIG attack trigger to image"""
-        img = image.copy().astype(np.float32)
+        # Handle both PIL Image and numpy array
+        if isinstance(image, Image.Image):
+            img = np.array(image).astype(np.uint8)
+        elif isinstance(image, torch.Tensor):
+            img = image.numpy().copy().astype(np.uint8)
+        else:
+            img = np.array(image).astype(np.uint8)
+        
         trigger = self._create_signal_pattern()
         
         # Blend trigger with image
@@ -131,7 +151,13 @@ class DynamicAttack:
         if self.trigger_mask is None or self.trigger_pattern is None:
             self.initialize_trigger()
         
-        img = image.copy().astype(np.float32)
+        # Handle both PIL Image and numpy array
+        if isinstance(image, Image.Image):
+            img = np.array(image).astype(np.uint8)
+        elif isinstance(image, torch.Tensor):
+            img = image.numpy().copy().astype(np.uint8)
+        else:
+            img = np.array(image).astype(np.uint8)
         
         # Overlay trigger where mask is 1
         for c in range(min(3, img.shape[2])):
@@ -168,7 +194,14 @@ class WaNetAttack:
         """Apply WaNet trigger (geometric warping) to image"""
         from scipy import ndimage
         
-        img = image.copy()
+        # Handle both PIL Image and numpy array
+        if isinstance(image, Image.Image):
+            img = np.array(image).astype(np.float32)
+        elif isinstance(image, torch.Tensor):
+            img = image.numpy().copy().astype(np.float32)
+        else:
+            img = np.array(image).astype(np.float32)
+        
         h, w = img.shape[:2]
         
         if self.noise is None:
@@ -190,7 +223,7 @@ class WaNetAttack:
                 mode='constant'
             )
         
-        return img.astype(np.uint8)
+        return np.clip(img, 0, 255).astype(np.uint8)
 
 
 class BackdoorAttackFactory:
@@ -240,7 +273,7 @@ def apply_backdoor_to_dataset(dataset: list, attack, poison_rate: float,
         if idx in poison_indices:
             # Apply trigger
             poisoned_img = attack.apply_trigger(img_array)
-            
+
             if target_type == 'all2one':
                 poisoned_dataset.append((Image.fromarray(poisoned_img), target_label))
             elif target_type == 'all2all':
