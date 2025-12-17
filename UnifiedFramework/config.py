@@ -41,7 +41,7 @@ class UnifiedConfig:
     def _add_attack_args(self):
         """Backdoor attack configuration arguments"""
         group = self.parser.add_argument_group('Attack')
-        group.add_argument('--attack_method', type=str, default='badnet',
+        group.add_argument('--attack_method', type=str,
                           choices=['none', 'badnet', 'blend', 'dynamic', 'sig', 'wanet'],
                           help='Backdoor attack method (none for clean training)')
         group.add_argument('--poison_rate', type=float, default=0.1,
@@ -61,7 +61,7 @@ class UnifiedConfig:
     def _add_defense_args(self):
         """Defense method configuration arguments"""
         group = self.parser.add_argument_group('Defense')
-        group.add_argument('--defense_method', type=str, default='none',
+        group.add_argument('--defense_method', type=str,
                           choices=['none', 'aibd', 'abl', 'cbd', 'dbd', 'nad'],
                           help='Defense method to use')
         
@@ -183,7 +183,7 @@ def get_config_for_dataset(dataset: str) -> dict:
             'img_width': 32,
         }
     }
-    return configs.get(dataset, configs['CIFAR10'])
+    return configs.get(dataset)
 
 
 def get_config_for_attack(attack: str) -> dict:
@@ -220,7 +220,7 @@ def get_config_for_attack(attack: str) -> dict:
             'trigger_alpha': 1.0,
         }
     }
-    return configs.get(attack, configs['badnet'])
+    return configs.get(attack)
 
 
 if __name__ == '__main__':
