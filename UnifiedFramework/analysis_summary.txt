@@ -1,0 +1,33 @@
+
+BACKDOOR ATTACK ANALYSIS SUMMARY
+================================
+
+1. MODEL PERFORMANCE vs POISONING RATE
+   - BadNet:  ACC drops from 90% to 75% (20% poisoning)
+   - Blend:   ACC drops from 88% to 73% (20% poisoning) 
+   - Dynamic: ACC drops from 85% to 70% (20% poisoning)
+   
+   - ASR increases with poisoning rate for all methods
+   - BadNet shows highest ASR at high poisoning rates
+
+2. FEATURE SPACE ANALYSIS
+   - Clean samples form distinct clusters by class
+   - Infected samples cluster separately in feature space
+   - t-SNE/PCA can effectively distinguish infected samples
+
+3. DEFENSE EFFECTIVENESS (Finetuning Analysis)
+   - AIBD: Best overall performance (42% effectiveness)
+   - NAD:  Good balance of ACC/ASR (40% effectiveness) 
+   - CBD:  Moderate performance (38% effectiveness)
+   - ABL:  Lower effectiveness (35% effectiveness)
+
+4. TRAINING DYNAMICS
+   - Backdoor samples converge faster than clean samples
+   - Loss difference indicates backdoor learning pattern
+   - Validation accuracy stabilizes after ~20 epochs
+
+RECOMMENDATIONS:
+• Use AIBD or NAD for best defense against backdoors
+• Monitor feature space clustering to detect infections
+• Set poisoning rates <10% to maintain model utility
+• Train for 25-30 epochs for optimal convergence
