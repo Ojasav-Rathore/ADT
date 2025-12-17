@@ -1,0 +1,9 @@
+[
+    {
+        "attack": "sig",
+        "defense": "none",
+        "dataset": "CIFAR10",
+        "ACC_before_defense": 71.06,
+        "ASR_before_defense": 18.52
+    }
+]

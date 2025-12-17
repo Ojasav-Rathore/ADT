@@ -149,9 +149,10 @@ class SignalAttack:
 class DynamicAttack:
     """Dynamic attack - uses parameterized trigger that adapts during training"""
     
-    def __init__(self, trigger_width: int = 32, trigger_height: int = 32):
+    def __init__(self, trigger_width: int = 32, trigger_height: int = 32, trigger_alpha: float = 0.2):
         self.trigger_width = trigger_width
         self.trigger_height = trigger_height
+        self.trigger_alpha = trigger_alpha
         self.trigger_mask = None
         self.trigger_pattern = None
     
