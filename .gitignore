@@ -1,1 +1,5 @@
 Data/
+.tmp.*/
+*.pyc
+*.log
+UnifiedFramework/datasets/__pycache__/data_utils.cpython-314.pyc

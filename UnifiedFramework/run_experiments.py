@@ -283,9 +283,17 @@ def main():
     # Create pipeline
     pipeline = ExperimentPipeline(args)
     
-    # Define experiments
-    attacks = ['badnet', 'blend', 'sig', 'dynamic', 'wanet']
-    defenses = ['none', 'abl', 'aibd', 'cbd', 'dbd', 'nad']
+    # Define experiments based on command-line arguments
+    # If specific attack/defense provided, use those; otherwise run all
+    if args.attack_method:
+        attacks = [args.attack_method]
+    else:
+        attacks = ['badnet', 'blend', 'sig', 'dynamic', 'wanet']
+    
+    if args.defense_method:
+        defenses = [args.defense_method]
+    else:
+        defenses = ['none', 'abl', 'aibd', 'cbd', 'dbd', 'nad']
     
     print(f"Running experiments on {args.dataset} dataset")
     print(f"Attacks: {attacks}")
