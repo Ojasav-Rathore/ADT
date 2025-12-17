@@ -1,0 +1,9 @@
+[
+    {
+        "attack": "wanet",
+        "defense": "none",
+        "dataset": "CIFAR10",
+        "ACC_before_defense": 72.89999999999999,
+        "ASR_before_defense": 18.87
+    }
+]
