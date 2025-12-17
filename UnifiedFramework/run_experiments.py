@@ -102,7 +102,8 @@ class ExperimentPipeline:
         experiment_name = f"{attack_method}_{defense_method}_poisoned"
         trainer.train_model(poisoned_train_loader, test_loader, 
                            self.args.epochs, self.args.lr, verbose=True,
-                           save_losses=True, experiment_name=experiment_name)
+                           save_losses=True, experiment_name=experiment_name,
+                           save_checkpoints=True, checkpoint_freq=5)
         
         # Evaluate poisoned model (baseline)
         print("\nEvaluating poisoned model (baseline)...")
@@ -174,7 +175,8 @@ class ExperimentPipeline:
                 teacher_experiment_name = f"{attack_method}_{defense_method}_teacher"
                 teacher_trainer.train_model(test_loader_clean, test_loader_clean, 
                                            self.args.epochs, self.args.lr, verbose=False,
-                                           save_losses=True, experiment_name=teacher_experiment_name)
+                                           save_losses=True, experiment_name=teacher_experiment_name,
+                                           save_checkpoints=True, checkpoint_freq=5)
                 defense = NADDefense(model_defended, teacher, self.args.device)
             else:
                 defense = StandardTrainer(model_defended, self.args.device)

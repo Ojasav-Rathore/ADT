@@ -25,7 +25,8 @@ class BaseDefense:
     def train_model(self, train_loader, val_loader, epochs: int, lr: float = 0.1,
                    momentum: float = 0.9, weight_decay: float = 1e-4,
                    verbose: bool = True, save_losses: bool = True, 
-                   experiment_name: str = None) -> Tuple[list, list]:
+                   experiment_name: str = None, save_checkpoints: bool = True,
+                   checkpoint_freq: int = 10) -> Tuple[list, list]:
         """
         Standard training loop with loss tracking
         
@@ -39,6 +40,8 @@ class BaseDefense:
             verbose: Print progress
             save_losses: Whether to save losses to file
             experiment_name: Name for the experiment (used in filename)
+            save_checkpoints: Whether to save model checkpoints
+            checkpoint_freq: Save checkpoint every N epochs
         
         Returns:
             (train_losses, val_accuracies)
@@ -87,6 +90,10 @@ class BaseDefense:
             
             if verbose:
                 print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Val Loss: {val_loss:.4f}, Val Accuracy: {val_acc:.4f}")
+            
+            # Save checkpoint if requested
+            if save_checkpoints and ((epoch + 1) % checkpoint_freq == 0 or epoch == epochs - 1):
+                self._save_checkpoint(epoch + 1, val_acc, val_loss, optimizer, experiment_name)
         
         # Save losses if requested
         if save_losses:
@@ -180,6 +187,63 @@ class BaseDefense:
             json.dump(loss_data, f, indent=4)
         
         print(f"Training losses saved to: {filename}")
+    
+    def _save_checkpoint(self, epoch: int, val_acc: float, val_loss: float, 
+                        optimizer, experiment_name: str):
+        """Save model checkpoint"""
+        # Create checkpoints directory if it doesn't exist
+        checkpoint_dir = './checkpoints'
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        
+        # Generate checkpoint filename
+        if experiment_name is None:
+            experiment_name = f"model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        checkpoint_path = os.path.join(checkpoint_dir, f"{experiment_name}_epoch_{epoch}.pth")
+        
+        # Save checkpoint
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'val_accuracy': val_acc,
+            'val_loss': val_loss,
+            'experiment_name': experiment_name,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        torch.save(checkpoint, checkpoint_path)
+        print(f"Checkpoint saved: {checkpoint_path}")
+        
+        # Also save the best model if this is the best validation accuracy
+        best_checkpoint_path = os.path.join(checkpoint_dir, f"{experiment_name}_best.pth")
+        
+        # Check if this is the best model so far
+        if not os.path.exists(best_checkpoint_path):
+            # First checkpoint, save as best
+            torch.save(checkpoint, best_checkpoint_path)
+            print(f"Best model saved: {best_checkpoint_path}")
+        else:
+            # Load previous best and compare
+            try:
+                prev_best = torch.load(best_checkpoint_path, map_location=self.device)
+                if val_acc > prev_best.get('val_accuracy', 0):
+                    torch.save(checkpoint, best_checkpoint_path)
+                    print(f"New best model saved: {best_checkpoint_path} (Val Acc: {val_acc:.4f} > {prev_best.get('val_accuracy', 0):.4f})")
+            except Exception as e:
+                print(f"Warning: Could not compare with previous best checkpoint: {e}")
+                torch.save(checkpoint, best_checkpoint_path)
+    
+    def load_checkpoint(self, checkpoint_path: str, optimizer=None) -> Dict:
+        """Load model from checkpoint"""
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        
+        if optimizer is not None and 'optimizer_state_dict' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        
+        print(f"Loaded checkpoint from {checkpoint_path} (Epoch: {checkpoint['epoch']}, Val Acc: {checkpoint.get('val_accuracy', 'N/A')})")
+        return checkpoint
     
     def evaluate(self, test_loader) -> Tuple[float, np.ndarray, np.ndarray]:
         """

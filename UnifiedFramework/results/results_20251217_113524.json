@@ -1,0 +1,9 @@
+[
+    {
+        "attack": "dynamic",
+        "defense": "none",
+        "dataset": "CIFAR10",
+        "ACC_before_defense": 73.55000000000001,
+        "ASR_before_defense": 18.9
+    }
+]

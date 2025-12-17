@@ -89,7 +89,8 @@ class AIBDDefense(BaseDefense):
         print("Stage 2: Training on isolated clean samples...")
         defense_exp_name = f"{experiment_name}_aibd_defense" if experiment_name else "aibd_defense"
         self.train_model(train_loader, val_loader, isolation_epochs, lr=lr, verbose=True,
-                        save_losses=True, experiment_name=defense_exp_name)
+                        save_losses=True, experiment_name=defense_exp_name, 
+                        save_checkpoints=True, checkpoint_freq=10)
 
 
 class ABLDefense(BaseDefense):
@@ -204,7 +205,8 @@ class ABLDefense(BaseDefense):
         print("Fine-tuning phase...")
         defense_exp_name = f"{experiment_name}_abl_defense" if experiment_name else "abl_defense"
         self.train_model(train_loader, val_loader, epochs=20, lr=0.01, verbose=True,
-                        save_losses=True, experiment_name=defense_exp_name)
+                        save_losses=True, experiment_name=defense_exp_name,
+                        save_checkpoints=True, checkpoint_freq=10)
 
 
 class CBDDefense(BaseDefense):
@@ -294,7 +296,8 @@ class DBDDefense(BaseDefense):
         print("Phase 1: Supervised learning...")
         defense_exp_name = f"{experiment_name}_dbd_defense" if experiment_name else "dbd_defense"
         self.train_model(train_loader, val_loader, supervised_epochs, lr=lr, verbose=True,
-                        save_losses=True, experiment_name=defense_exp_name)
+                        save_losses=True, experiment_name=defense_exp_name,
+                        save_checkpoints=True, checkpoint_freq=15)
         
         # Phase 2: Self-supervised learning (using contrastive loss)
         print("Phase 2: Self-supervised learning...")
@@ -400,7 +403,8 @@ class NADDefense(BaseDefense):
             print("No teacher model provided, using standard training")
             defense_exp_name = f"{experiment_name}_nad_defense" if experiment_name else "nad_defense"
             self.train_model(train_loader, val_loader, epochs, lr=lr, verbose=True,
-                            save_losses=True, experiment_name=defense_exp_name)
+                            save_losses=True, experiment_name=defense_exp_name,
+                            save_checkpoints=True, checkpoint_freq=5)
             return
         
         self.teacher_model.eval()
