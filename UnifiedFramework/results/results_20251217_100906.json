@@ -1,0 +1,9 @@
+[
+    {
+        "attack": "badnet",
+        "defense": "none",
+        "dataset": "CIFAR10",
+        "ACC_before_defense": 71.87,
+        "ASR_before_defense": 18.17
+    }
+]

@@ -9,6 +9,23 @@ from typing import Tuple, Optional
 from PIL import Image
 
 
+class NoneAttack:
+    """No attack - clean training (for baseline comparison)"""
+    
+    def __init__(self):
+        pass
+    
+    def apply_trigger(self, image: np.ndarray) -> np.ndarray:
+        """Return image unchanged (no poisoning)"""
+        # Handle different input types but return unchanged
+        if isinstance(image, Image.Image):
+            return np.array(image).astype(np.uint8)
+        elif isinstance(image, torch.Tensor):
+            return image.numpy().copy().astype(np.uint8)
+        else:
+            return np.array(image).astype(np.uint8)
+
+
 class BadNetAttack:
     """BadNet attack with square trigger pattern"""
     
@@ -233,6 +250,7 @@ class BackdoorAttackFactory:
     def create_attack(attack_type: str, **kwargs) -> object:
         """Create attack instance based on type"""
         attacks = {
+            'none': NoneAttack,
             'badnet': BadNetAttack,
             'blend': BlendAttack,
             'sig': SignalAttack,
@@ -262,6 +280,11 @@ def apply_backdoor_to_dataset(dataset: list, attack, poison_rate: float,
     Returns:
         (poisoned_dataset, poison_indices)
     """
+    # Handle clean training (no attack)
+    if isinstance(attack, NoneAttack):
+        # Return dataset unchanged with empty poison indices
+        return list(dataset), []
+    
     n_poison = int(len(dataset) * poison_rate)
     poison_indices = np.random.choice(len(dataset), n_poison, replace=False)
     

@@ -76,7 +76,7 @@ class AIBDDefense(BaseDefense):
         return suspicious_indices
     
     def defend(self, train_loader, val_loader, epochs: int = 100, 
-              isolation_epochs: int = 20, lr: float = 0.1) -> None:
+              isolation_epochs: int = 20, lr: float = 0.1, experiment_name: str = None) -> None:
         """AIBD defense procedure"""
         print("Starting AIBD defense...")
         
@@ -87,7 +87,9 @@ class AIBDDefense(BaseDefense):
         
         # Stage 2: Train on clean samples
         print("Stage 2: Training on isolated clean samples...")
-        self.train_model(train_loader, val_loader, isolation_epochs, lr=lr, verbose=True)
+        defense_exp_name = f"{experiment_name}_aibd_defense" if experiment_name else "aibd_defense"
+        self.train_model(train_loader, val_loader, isolation_epochs, lr=lr, verbose=True,
+                        save_losses=True, experiment_name=defense_exp_name)
 
 
 class ABLDefense(BaseDefense):
@@ -187,7 +189,7 @@ class ABLDefense(BaseDefense):
             
             print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_loader):.4f}")
     
-    def defend(self, train_loader, val_loader, epochs: int = 100) -> None:
+    def defend(self, train_loader, val_loader, epochs: int = 100, experiment_name: str = None) -> None:
         """ABL defense procedure"""
         print("Starting ABL defense...")
         
@@ -200,7 +202,9 @@ class ABLDefense(BaseDefense):
         
         # Stage 3: Fine-tuning
         print("Fine-tuning phase...")
-        self.train_model(train_loader, val_loader, epochs=20, lr=0.01, verbose=True)
+        defense_exp_name = f"{experiment_name}_abl_defense" if experiment_name else "abl_defense"
+        self.train_model(train_loader, val_loader, epochs=20, lr=0.01, verbose=True,
+                        save_losses=True, experiment_name=defense_exp_name)
 
 
 class CBDDefense(BaseDefense):
@@ -217,7 +221,7 @@ class CBDDefense(BaseDefense):
         self.confounding_model = copy.deepcopy(model).to(device)
     
     def defend(self, train_loader, val_loader, epochs: int = 100, 
-              lr: float = 0.1) -> None:
+              lr: float = 0.1, experiment_name: str = None) -> None:
         """CBD defense procedure"""
         print("Starting CBD defense...")
         
@@ -282,13 +286,15 @@ class DBDDefense(BaseDefense):
     
     def defend(self, train_loader, val_loader, epochs: int = 100,
               supervised_epochs: int = 50, self_supervised_epochs: int = 50,
-              lr: float = 0.1) -> None:
+              lr: float = 0.1, experiment_name: str = None) -> None:
         """DBD defense procedure"""
         print("Starting DBD defense...")
         
         # Phase 1: Supervised training
         print("Phase 1: Supervised learning...")
-        self.train_model(train_loader, val_loader, supervised_epochs, lr=lr, verbose=True)
+        defense_exp_name = f"{experiment_name}_dbd_defense" if experiment_name else "dbd_defense"
+        self.train_model(train_loader, val_loader, supervised_epochs, lr=lr, verbose=True,
+                        save_losses=True, experiment_name=defense_exp_name)
         
         # Phase 2: Self-supervised learning (using contrastive loss)
         print("Phase 2: Self-supervised learning...")
@@ -385,14 +391,16 @@ class NADDefense(BaseDefense):
             self.teacher_model = teacher_model.to(device)
     
     def defend(self, train_loader, val_loader, clean_loader, epochs: int = 20,
-              lr: float = 0.1) -> None:
+              lr: float = 0.1, experiment_name: str = None) -> None:
         """NAD defense procedure"""
         print("Starting NAD defense...")
         
         # If no teacher provided, use standard training
         if self.teacher_model is None:
             print("No teacher model provided, using standard training")
-            self.train_model(train_loader, val_loader, epochs, lr=lr, verbose=True)
+            defense_exp_name = f"{experiment_name}_nad_defense" if experiment_name else "nad_defense"
+            self.train_model(train_loader, val_loader, epochs, lr=lr, verbose=True,
+                            save_losses=True, experiment_name=defense_exp_name)
             return
         
         self.teacher_model.eval()

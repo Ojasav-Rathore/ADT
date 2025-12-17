@@ -1,0 +1,9 @@
+[
+    {
+        "attack": "blend",
+        "defense": "none",
+        "dataset": "CIFAR10",
+        "ACC_before_defense": 72.08,
+        "ASR_before_defense": 19.08
+    }
+]

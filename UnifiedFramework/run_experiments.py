@@ -99,8 +99,10 @@ class ExperimentPipeline:
         
         # Train poisoned model
         trainer = StandardTrainer(model, self.args.device)
+        experiment_name = f"{attack_method}_{defense_method}_poisoned"
         trainer.train_model(poisoned_train_loader, test_loader, 
-                           self.args.epochs, self.args.lr, verbose=True)
+                           self.args.epochs, self.args.lr, verbose=True,
+                           save_losses=True, experiment_name=experiment_name)
         
         # Evaluate poisoned model (baseline)
         print("\nEvaluating poisoned model (baseline)...")
@@ -117,18 +119,23 @@ class ExperimentPipeline:
         clean_acc, clean_preds, clean_labels = trainer.evaluate(test_loader_clean)
         print(f"Clean Accuracy (before defense): {clean_acc*100:.2f}%")
         
-        # Test on poisoned samples
-        poisoned_test_dataset, poison_test_indices = self._create_poisoned_dataset(
-            base_test_dataset, attack_method
-        )
-        poisoned_test_loader = create_poisoned_loader(
-            self.args.dataset, self.args.data_path, poisoned_test_dataset,
-            batch_size=self.args.batch_size
-        )
-        
-        _, poison_preds, poison_labels = trainer.evaluate(poisoned_test_loader)
-        asr_before = np.mean(poison_preds == self.args.target_label) * 100
-        print(f"Attack Success Rate (before defense): {asr_before:.2f}%")
+        # Test on poisoned samples (handle clean training case)
+        if attack_method.lower() == 'none':
+            # No attack means ASR should be 0
+            asr_before = 0.0
+            print(f"Attack Success Rate (before defense): {asr_before:.2f}% (no attack)")
+        else:
+            poisoned_test_dataset, poison_test_indices = self._create_poisoned_dataset(
+                base_test_dataset, attack_method
+            )
+            poisoned_test_loader = create_poisoned_loader(
+                self.args.dataset, self.args.data_path, poisoned_test_dataset,
+                batch_size=self.args.batch_size
+            )
+            
+            _, poison_preds, poison_labels = trainer.evaluate(poisoned_test_loader)
+            asr_before = np.mean(poison_preds == self.args.target_label) * 100
+            print(f"Attack Success Rate (before defense): {asr_before:.2f}%")
         
         results = {
             'attack': attack_method,
@@ -164,28 +171,44 @@ class ExperimentPipeline:
                 # Train teacher model on clean data
                 teacher = create_model(self.args.model_arch, self.args.num_classes)
                 teacher_trainer = StandardTrainer(teacher, self.args.device)
+                teacher_experiment_name = f"{attack_method}_{defense_method}_teacher"
                 teacher_trainer.train_model(test_loader_clean, test_loader_clean, 
-                                           self.args.epochs, self.args.lr, verbose=False)
+                                           self.args.epochs, self.args.lr, verbose=False,
+                                           save_losses=True, experiment_name=teacher_experiment_name)
                 defense = NADDefense(model_defended, teacher, self.args.device)
             else:
                 defense = StandardTrainer(model_defended, self.args.device)
             
             # Apply defense
+            defense_experiment_name = f"{attack_method}_{defense_method}_defended"
             if defense_method.lower() == 'nad':
                 defense.defend(poisoned_train_loader, test_loader_clean, 
-                             test_loader_clean, self.args.epochs)
+                             test_loader_clean, self.args.epochs, experiment_name=defense_experiment_name)
             else:
                 defense.defend(poisoned_train_loader, test_loader_clean, 
-                             self.args.epochs)
+                             self.args.epochs, experiment_name=defense_experiment_name)
             
             # Evaluate defended model
             print("\nEvaluating defended model...")
             clean_acc_after, _, _ = defense.evaluate(test_loader_clean)
             print(f"Clean Accuracy (after defense): {clean_acc_after*100:.2f}%")
             
-            asr_after, _, _ = defense.evaluate(poisoned_test_loader)
-            asr_after = np.mean(asr_after == self.args.target_label) * 100
-            print(f"Attack Success Rate (after defense): {asr_after:.2f}%")
+            # Handle ASR evaluation for defended model
+            if attack_method.lower() == 'none':
+                asr_after = 0.0
+                print(f"Attack Success Rate (after defense): {asr_after:.2f}% (no attack)")
+            else:
+                # Recreate poisoned test loader for consistency 
+                poisoned_test_dataset, _ = self._create_poisoned_dataset(
+                    base_test_dataset, attack_method
+                )
+                poisoned_test_loader = create_poisoned_loader(
+                    self.args.dataset, self.args.data_path, poisoned_test_dataset,
+                    batch_size=self.args.batch_size
+                )
+                asr_after_preds, _, _ = defense.evaluate(poisoned_test_loader)
+                asr_after = np.mean(asr_after_preds == self.args.target_label) * 100
+                print(f"Attack Success Rate (after defense): {asr_after:.2f}%")
             
             results['ACC_after_defense'] = clean_acc_after * 100
             results['ASR_after_defense'] = asr_after
@@ -196,6 +219,11 @@ class ExperimentPipeline:
     
     def _create_poisoned_dataset(self, base_dataset, attack_method: str) -> Tuple[list, list]:
         """Create poisoned version of dataset"""
+        # Handle clean training (no attack)
+        if attack_method.lower() == 'none':
+            print("Clean training - no attack applied")
+            return list(base_dataset), []
+        
         # Update attack-specific config
         attack_config = get_config_for_attack(attack_method)
         
@@ -288,7 +316,7 @@ def main():
     if args.attack_method:
         attacks = [args.attack_method]
     else:
-        attacks = ['badnet', 'blend', 'sig', 'dynamic', 'wanet']
+        attacks = ['none', 'badnet', 'blend', 'sig', 'dynamic', 'wanet']
     
     if args.defense_method:
         defenses = [args.defense_method]

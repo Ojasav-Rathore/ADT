@@ -42,8 +42,8 @@ class UnifiedConfig:
         """Backdoor attack configuration arguments"""
         group = self.parser.add_argument_group('Attack')
         group.add_argument('--attack_method', type=str, default='badnet',
-                          choices=['badnet', 'blend', 'dynamic', 'sig', 'wanet'],
-                          help='Backdoor attack method')
+                          choices=['none', 'badnet', 'blend', 'dynamic', 'sig', 'wanet'],
+                          help='Backdoor attack method (none for clean training)')
         group.add_argument('--poison_rate', type=float, default=0.1,
                           help='Poisoning rate for training data')
         group.add_argument('--target_label', type=int, default=0,
@@ -99,7 +99,7 @@ class UnifiedConfig:
                           help='DBD number of classes')
         
         # NAD specific
-        group.add_argument('--nad_epochs', type=int, default=20,
+        group.add_argument('--nad_epochs', type=int, default=100,
                           help='NAD training epochs')
         group.add_argument('--nad_ratio', type=float, default=0.05,
                           help='NAD ratio of training data to use')
@@ -189,6 +189,11 @@ def get_config_for_dataset(dataset: str) -> dict:
 def get_config_for_attack(attack: str) -> dict:
     """Get default config values for a specific attack"""
     configs = {
+        'none': {
+            'trigger_width': 0,
+            'trigger_height': 0,
+            'trigger_alpha': 0.0,
+        },
         'badnet': {
             'trigger_width': 4,
             'trigger_height': 4,
