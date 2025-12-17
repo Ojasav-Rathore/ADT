@@ -190,10 +190,11 @@ class WaNetAttack:
     """WaNet (Warping and Adversarial) attack with geometric transformation"""
     
     def __init__(self, trigger_width: int = 32, trigger_height: int = 32,
-                 grid_rescale: float = 0.05):
+                 grid_rescale: float = 0.05, trigger_alpha: float = 0.2):
         self.trigger_width = trigger_width
         self.trigger_height = trigger_height
         self.grid_rescale = grid_rescale
+        self.trigger_alpha = trigger_alpha
         self.noise = None
     
     def _create_grid_noise(self, shape: Tuple, seed: int = 42) -> np.ndarray:
